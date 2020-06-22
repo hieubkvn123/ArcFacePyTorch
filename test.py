@@ -11,6 +11,7 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 
+from face_align import align
 from arcface_net import ArcFaceNet
 from imutils.video import WebcamVideoStream
 from sklearn.decomposition import PCA
@@ -35,6 +36,18 @@ faces = list()
 labels = list()
 known_encodings = list()
 
+def lumination_neutralize(img):
+	lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+	l, a, b = cv2.split(lab)
+
+	clahe = cv2.createCLAHE(clipLimit=3, tileGridSize=(8,8))
+	l_clahe = clahe.apply(l)
+
+	lab_clahe = cv2.merge((l_clahe, a, b))
+	bgr = cv2.cvtColor(lab_clahe, cv2.COLOR_LAB2BGR)
+
+	return bgr
+
 def detect_face(img):
 	haar = cv2.CascadeClassifier(HAAR)
 	
@@ -51,15 +64,11 @@ if(not os.path.exists(FACE_FILE_PICKLE) or not os.path.exists(LABEL_FILE_PICKLE)
 		if(dir != DATA_DIR):
 			for file in files:
 				abs_img_path = dir + '/' + file
+				print("[INFO] Reading " + abs_img_path)
 				
 				img = cv2.imread(abs_img_path)
-				rect, face = detect_face(img)
-				
-				if(not isinstance(face, np.ndarray)): continue
-				
-				print("[INFO] Reading " + abs_img_path + " ... ")
-				
-				face = cv2.resize(face, (WIDTH, HEIGHT))
+				faces_, face_locations_ = align(img, width=WIDTH, height=HEIGHT, operation=None)
+				face = faces_[0]
 				faces.append(face)
 				label = dir.split('/')[-1]
 				
@@ -119,29 +128,11 @@ while(True):
 	if(PROCESS_FRAME):
 		face_locations = list()
 		face_names = list()
-		blob = cv2.dnn.blobFromImage(frame, 1.0, (300,300), (111,104,123))
-		detector.setInput(blob)
-		detections = detector.forward()
 
-		for i in range(0, detections.shape[2]):
-			confidence = detections[0,0,i,2]
+		faces, face_locations = align(frame, width=WIDTH, height=HEIGHT, operation=None)
 
-			if(confidence < 0.5):
-				continue
-
-			box = detections[0,0,i,3:7] * np.array([W,H,W,H])
-			(startX, startY, endX, endY) = box.astype("int")
-
-			startX = max(0, startX)
-			startY = max(0, startY)
-			endX = min(W, endX)
-			endY = min(H, endY)
-
-			face_locations.append((startX, startY, endX, endY))
-
-			face = frame[startY:endY, startX:endX]
-			face = cv2.resize(face, (WIDTH, HEIGHT))
-			# label = recognize(face)
+		for face in faces:
+			cv2.imshow("Face", face)
 			face = np.array([face])
 			face = torch.Tensor(face).reshape(1, CHANNELS, HEIGHT, WIDTH)
 			encoding = model(face).detach().numpy()[0]
@@ -149,7 +140,7 @@ while(True):
 			### Encoding normalization ###
 			encoding = encoding / np.linalg.norm(encoding)
 
-			matches = face_recognition.compare_faces(known_encodings, encoding, tolerance = 0.5)
+			matches = face_recognition.compare_faces(known_encodings, encoding, tolerance = 0.3)
 			face_distances = face_recognition.face_distance(known_encodings, encoding)
 
 			emb = pca.transform([encoding])
@@ -176,8 +167,7 @@ while(True):
 	if(key == ord("q")):
 		break
 
-plt.legend()
-plt.show()
-
 vs.stop()
 cv2.destroyAllWindows()
+plt.legend()
+plt.show()
