@@ -8,6 +8,7 @@ from bing_image_downloader import downloader
 model_dnn = '../dnn_model.caffemodel'
 prototxt = '../deploy.prototxt'
 DATA_DIR = './dataset/bing'
+TEST_DATA_DIR = './dataset/test'
 
 ### the models ###
 detector = cv2.dnn.readNetFromCaffe(prototxt, model_dnn)
@@ -44,7 +45,7 @@ for query in names:
 		print("[INFO] Data dir '" + query + "' has already exist, Skipping ... ")
 		continue
 		
-	downloader.download(query, limit=30, adult_filter_off=False, force_replace=True)
+	downloader.download(query, limit=35, adult_filter_off=False, force_replace=True)
 
 ### After the download we need to check for validity ###
 ### Criteria : only 1 face per image, true gender ### 
@@ -85,3 +86,27 @@ while(not ALL_SATISFIED):
 
 	if(invalid_count == 0):
 		ALL_SATISFIED = True
+
+### move some of the data to to testing folder ###
+print("[INFO] Creating testing dataset ... ")
+if(not os.path.exists(TEST_DATA_DIR)):
+	print("[INFO] Testing data directory does not exist, creating ... ")
+	os.mkdir(TEST_DATA_DIR)
+
+for (dir, dirs, files) in os.walk(DATA_DIR):
+	# each class will have 30% of testing image w.r.t original dataset
+	index = np.random.choice(len(files), size=int(len(files)/3), replace=False)
+	test_files = np.array(files)[index]
+
+	for file in test_files:
+		old_abs_path = dir + "/" + file
+		class_folder = dir.split("/")[-1]
+
+		if(not os.path.exists(TEST_DATA_DIR + "/" + class_folder)):
+			os.mkdir(TEST_DATA_DIR + "/" + class_folder)
+
+		new_abs_path = TEST_DATA_DIR + "/" + class_folder + "/" + file 
+
+		if(os.path.exists(old_abs_path)):
+			print("[INFO] Moving " + old_abs_path + " to " + new_abs_path)
+			os.rename(old_abs_path, new_abs_path)
