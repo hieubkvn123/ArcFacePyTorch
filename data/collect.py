@@ -25,16 +25,20 @@ search_queries = {
 	'Emma Watson' : 'Female',
 	'Lee Hsien Loong' : 'Male',
 	'Marina Joyce' : 'Female',
-        'Kanye West' : 'Male',
-        'Taylor Swift' : 'Female',
-        'Jeff Bezoos' : 'Male',
-        'Selena Gomez' : 'Female',
-        'Justin Beiber' : 'Male',
-        'Ariana Grande' : 'Female',
-        'Andrew Ng' : 'Male',
-        'Markiplier' : 'Male',
-        'Billie Eilish' : 'Female',
-        'Beyonce' : 'Female'
+    'Kanye West' : 'Male',
+    'Taylor Swift' : 'Female',
+    'Jeff Bezoos' : 'Male',
+    'Selena Gomez' : 'Female',
+    'Justin Beiber' : 'Male',
+    'Ariana Grande' : 'Female',
+    'Andrew Ng' : 'Male',
+    'Markiplier' : 'Male',
+    'Billie Eilish' : 'Female',
+    'Beyonce' : 'Female',
+    'Jackie Chan' : 'Male',
+    'Stephen Chow' : 'Male',
+    'Fan BingBing' : 'Female',
+    'Yang Mi' : 'Female'
 }
 
 
